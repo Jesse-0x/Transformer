@@ -1,0 +1,7 @@
+{
+    "dialogues": [
+        ["Hello, how are you?", "I'm good, thank you!"],
+        ["What's the weather today?", "It's sunny and warm."],
+        []
+    ]
+}

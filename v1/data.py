@@ -28,11 +28,22 @@ tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
+def split_src_tgt(example):
+    src_text = ' '.join(example['text'].split('\n')[:-1])  # All but last sentence
+    tgt_text = example['text'].split('\n')[-1]  # Last sentence
+    return {'src': src_text, 'tgt': tgt_text}
+
+# Apply the function to split src and tgt
+split_datasets = dataset.map(split_src_tgt)
+
 # Tokenize the dataset
 def tokenize_function(examples):
-    return tokenizer(examples['text'], truncation=True, padding='max_length', max_length=512)
+    src_encodings = tokenizer(examples['src'], truncation=True, padding='max_length', max_length=256, return_tensors='pt')
+    tgt_encodings = tokenizer(examples['tgt'], truncation=True, padding='max_length', max_length=256, return_tensors='pt')
+    return {'src': src_encodings, 'tgt': tgt_encodings}
 
-tokenized_datasets = dataset.map(tokenize_function, batched=True, remove_columns=["text"])
+
+tokenized_datasets = split_datasets.map(tokenize_function, batched=True)
 
 # Set the batch size
 batch_size = 32
@@ -46,3 +57,7 @@ data_collator = DataCollatorForLanguageModeling(
 # Prepare DataLoader
 train_loader = DataLoader(tokenized_datasets["train"], batch_size=batch_size, shuffle=True, collate_fn=data_collator)
 valid_loader = DataLoader(tokenized_datasets["validation"], batch_size=batch_size, collate_fn=data_collator)
+
+# Prepare DataLoader
+# train_loader = DataLoader(tokenized_datasets["train"], batch_size=batch_size, shuffle=True)
+# valid_loader = DataLoader(tokenized_datasets["validation"], batch_size=batch_size)

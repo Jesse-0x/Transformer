@@ -46,36 +46,6 @@ device = torch.device('mps')
 # Training Loop
 import numpy as np
 
-
-# Usage:
-# Assume padding_id = 0
-# src, tgt are your source and target tensors with shapes (batch_size, src_len) and (batch_size, tgt_len) respectively.
-# tgt_mask = create_tgt_mask(tgt, padding_id=0, num_heads=32)
-
-def create_tgt_mask(tgt, padding_id, num_heads):
-    tgt_len = tgt.size(1)
-    # Create target padding mask
-    tgt_pad_mask = (tgt != padding_id).unsqueeze(-2)  # Shape: (batch_size, 1, tgt_len)
-
-    # Create target subsequent mask
-    tgt_sub_mask = torch.triu(torch.ones((tgt_len, tgt_len), device=tgt.device), diagonal=1).bool()  # Shape: (tgt_len, tgt_len)
-
-    # Combine the two masks
-    tgt_mask = tgt_pad_mask & tgt_sub_mask  # Shape: (batch_size, tgt_len, tgt_len)
-
-    # Reshape the mask to get the desired shape (N * num_heads, tgt_len, tgt_len)
-    batch_size = tgt.size(0)
-    tgt_mask_expanded = tgt_mask.unsqueeze(1).expand(-1, num_heads, -1, -1).contiguous().view(batch_size * num_heads, tgt_len, tgt_len)  # Shape: (batch_size * num_heads, tgt_len, tgt_len)
-
-    return tgt_mask_expanded
-
-def create_src_mask(src, pad_id):
-    src_mask = (src != pad_id).unsqueeze(-2).unsqueeze(1)  # Shape: (batch_size, 1, 1, src_len)
-    return src_mask
-
-
-
-
 # load the model
 model.load_state_dict(torch.load('/Users/jesse/PycharmProjects/Transformer/working.pth'))
 num_epochs = 200
@@ -91,7 +61,7 @@ for epoch in range(num_epochs):
 
         # Forward pass
         outputs = model(input_ids, target_ids)
-        loss = criterion(outputs.view(-1, outputs.size(-1)), target_ids.view(-1))
+        loss = criterion(outputs.vicoew(-1, outputs.size(-1)), target_ids.view(-1))
 
         # print out the model's prediction
         print(torch.argmax(outputs[0], dim=1).tolist())

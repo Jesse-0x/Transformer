@@ -20,8 +20,22 @@ model = Transformer(vocab_size, num_layers, d_model, num_heads, d_ff, dropout)
 model.to(device)  # Assuming CUDA is available
 
 # Loss function and Optimizer
-criterion = nn.CrossEntropyLoss(ignore_index= 2)  # Assuming pad_token_id is available from tokenizer
+criterion = nn.CrossEntropyLoss(ignore_index=2)  # Assuming pad_token_id is available from tokenizer
 optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+
+def create_src_mask(src, pad_id=2):
+    src_mask = (src != pad_id).unsqueeze(1).unsqueeze(2)
+    return src_mask
+
+
+def create_tgt_mask(tgt, padding_id=2, num_heads=32):
+    tgt_mask = (tgt != padding_id).unsqueeze(1).unsqueeze(2)
+    tgt_mask = tgt_mask & torch.tril(torch.ones((tgt.size(1), tgt.size(1)), device=device)).bool()
+    tgt_mask = tgt_mask.repeat(num_heads, 1, 1)
+    tgt_mask = tgt_mask.float()
+    return tgt_mask
+
 
 # load the model
 model.load_state_dict(torch.load('/Users/jesse/PycharmProjects/Transformer/v1/v1.3.pth'))
@@ -39,7 +53,7 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
 
         # Forward pass
-        outputs = model(src, tgt)
+        outputs = model(src, tgt, create_src_mask(src), create_tgt_mask(tgt))
         # The dimension of outputs is [batch_size, seq_len, vocab_size], and the dimension of tgt is [batch_size, seq_len]
         # So, we need to reshape the tensors to compute loss
         loss = criterion(outputs.view(-1, vocab_size), tgt.view(-1))
@@ -59,7 +73,7 @@ for epoch in range(num_epochs):
         print(f'Epoch: {epoch}, Loss:  {loss.item()}')
 
     # Print loss for this epoch
-    print(f'Epoch {epoch+1}/{num_epochs}, Loss: {total_loss/len(train_loader)}')
+    print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {total_loss / len(train_loader)}')
 
 # Save the model
 torch.save(model.state_dict(), 'v1.4.pth')
